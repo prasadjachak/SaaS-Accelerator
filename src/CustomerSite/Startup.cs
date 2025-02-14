@@ -99,7 +99,7 @@ public class Startup
                 options.Authority = $"{config.AdAuthenticationEndPoint}/common/v2.0";
                 options.ClientId = config.MTClientId;
                 options.ResponseType = OpenIdConnectResponseType.IdToken;
-                options.CallbackPath = "/Home/Index";
+                options.CallbackPath = "/home/index";
                 options.SignedOutRedirectUri = config.SignedOutRedirectUri;
                 options.TokenValidationParameters.NameClaimType = ClaimConstants.CLAIM_SHORT_NAME;
                 options.TokenValidationParameters.ValidateIssuer = false;
