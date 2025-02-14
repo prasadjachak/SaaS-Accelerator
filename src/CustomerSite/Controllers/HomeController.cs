@@ -212,7 +212,7 @@ public class HomeController : BaseController
     {
         try
         {
-            this.logger.Info(HttpUtility.HtmlEncode($"Landing page with token {token}"));
+            this.logger.Debug(HttpUtility.HtmlEncode($"Landing page with token {token}"));
             SubscriptionResult subscriptionDetail = new SubscriptionResult();
             SubscriptionResultExtension subscriptionExtension = new SubscriptionResultExtension();
 

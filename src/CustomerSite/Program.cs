@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace Marketplace.SaaS.Accelerator.CustomerSite;
 
@@ -18,12 +19,10 @@ public class Program
         CreateHostBuilder(args).Build().Run();
         var loggerFactory = LoggerFactory.Create(builder =>
         {
-            builder
-                .AddDebug()
-                .AddConsole();
+            builder.AddSerilog();
         });
 
-        ILogger logger = loggerFactory.CreateLogger<Program>();
+        Microsoft.Extensions.Logging.ILogger logger = loggerFactory.CreateLogger<Program>();
         logger.LogInformation("Service Provisioning initialized!!");
     }
 
@@ -36,13 +35,12 @@ public class Program
         Host.CreateDefaultBuilder(args)
             .ConfigureLogging(logging =>
             {
-                logging.ClearProviders();
-                logging.AddConsole();
-                logging.AddDebug();
+                logging.AddSerilog();
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {
                 webBuilder.UseUrls("https://*:5001", "http://*:5000");
                 webBuilder.UseStartup<Startup>();
-            });
+            })
+        .UseSerilog((ctx, logConfig) => logConfig.ReadFrom.Configuration(ctx.Configuration));
 }
