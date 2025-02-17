@@ -26,6 +26,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.Marketplace.SaaS;
+using Serilog.Ui.MsSqlServerProvider;
+using Serilog.Ui.Web;
 using System;
 using System.Diagnostics;
 using System.Reflection;
@@ -104,6 +106,10 @@ public class Startup
                 options.TokenValidationParameters.NameClaimType = ClaimConstants.CLAIM_SHORT_NAME;
                 options.TokenValidationParameters.ValidateIssuer = false;
             });
+
+        services.AddSerilogUi(options => options.UseSqlServer("Data Source=.;Initial Catalog=MSAPPSOURCE;Integrated Security=False;Persist Security Info=False;User ID=sa;Password=Sql@123;Trust Server Certificate=True;Connection Timeout=1200000;Max Pool Size=500;Pooling=true;", "Logs"));
+
+
         services
             .AddTransient<IClaimsTransformation, CustomClaimsTransformation>()
             .AddScoped<ExceptionHandlerAttribute>()
@@ -150,7 +156,7 @@ public class Startup
             app.UseExceptionHandler("/Home/Error");
             app.UseHsts();
         }
-
+        app.UseSerilogUi();
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseCookiePolicy();
