@@ -116,7 +116,7 @@ public class Startup
             options.EventsType = typeof(CustomOpenIdConnectEvents);
         });
 
-        services.AddSerilogUi(options => options.UseSqlServer("Data Source=.;Initial Catalog=MSAPPSOURCE;Integrated Security=False;Persist Security Info=False;User ID=sa;Password=Sql@123;Trust Server Certificate=True;Connection Timeout=1200000;Max Pool Size=500;Pooling=true;", "Logs"));
+        services.AddSerilogUi(options => options.UseSqlServer("Data Source=Marketplace-san\\SQLEXPRESS;Initial Catalog=MSAPPSOURCE;Integrated Security=False;Persist Security Info=False;User ID=sa;Password=Sql@32149870;Trust Server Certificate=True;Connection Timeout=1200000;Max Pool Size=500;Pooling=true;", "Logs"));
 
 
         services
