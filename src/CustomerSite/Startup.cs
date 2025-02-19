@@ -13,6 +13,7 @@ using Marketplace.SaaS.Accelerator.Services.Services;
 using Marketplace.SaaS.Accelerator.Services.Utilities;
 using Marketplace.SaaS.Accelerator.Services.WebHook;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.AzureADB2C.UI;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
@@ -86,12 +87,15 @@ public class Startup
         services
             .AddAuthentication(options =>
             {
+                
                 options.DefaultAuthenticateScheme = OpenIdConnectDefaults.AuthenticationScheme;
                 options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             })
             .AddCookie(options =>
             {
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.None;
                 options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
                 options.Cookie.MaxAge = options.ExpireTimeSpan;
                 options.SlidingExpiration = true;
@@ -106,6 +110,11 @@ public class Startup
                 options.TokenValidationParameters.NameClaimType = ClaimConstants.CLAIM_SHORT_NAME;
                 options.TokenValidationParameters.ValidateIssuer = false;
             });
+
+        services.Configure<OpenIdConnectOptions>(AzureADB2CDefaults.OpenIdScheme, options =>
+        {
+            options.EventsType = typeof(CustomOpenIdConnectEvents);
+        });
 
         services.AddSerilogUi(options => options.UseSqlServer("Data Source=.;Initial Catalog=MSAPPSOURCE;Integrated Security=False;Persist Security Info=False;User ID=sa;Password=Sql@123;Trust Server Certificate=True;Connection Timeout=1200000;Max Pool Size=500;Pooling=true;", "Logs"));
 
@@ -165,7 +174,7 @@ public class Startup
         {
             routes.MapRoute(
                 name: "default",
-                template: "{controller=Home}/{action=Index}/{id?}");
+                template: "{controller=Home}/{action=Index}/{token?}");
         });
     }
 
