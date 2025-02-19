@@ -208,6 +208,110 @@ public class HomeController : BaseController
     /// <returns>
     /// The <see cref="IActionResult" />.
     /// </returns>
+    /// 
+
+    public async Task<IActionResult> Landing(string token = null)
+    {
+        try
+        {
+            this.logger.Debug(HttpUtility.HtmlEncode($"Landing page with token {token}"));
+            SubscriptionResult subscriptionDetail = new SubscriptionResult();
+            SubscriptionResultExtension subscriptionExtension = new SubscriptionResultExtension();
+
+            this.applicationConfigService.SaveFileToDisk("LogoFile", "contoso-sales.png");
+            this.applicationConfigService.SaveFileToDisk("FaviconFile", "favicon.ico");
+
+            if (this.User.Identity.IsAuthenticated)
+            {
+                var userId = this.userService.AddUser(this.GetCurrentUserDetail());
+                var currentUserId = this.userService.GetUserIdFromEmailAddress(this.CurrentUserEmailAddress);
+                this.subscriptionService = new SubscriptionService(this.subscriptionRepository, this.planRepository, userId);
+                this.logger.Info("User authenticated successfully");
+                if (!string.IsNullOrEmpty(token))
+                {
+                    this.TempData["ShowWelcomeScreen"] = null;
+                    token = token.Replace(' ', '+');
+                    var newSubscription = await this.apiService.ResolveAsync(token).ConfigureAwait(false);
+                    if (newSubscription != null && newSubscription.SubscriptionId != default)
+                    {
+                        Offers offers = new Offers()
+                        {
+                            OfferId = newSubscription.OfferId,
+                            OfferName = newSubscription.OfferId,
+                            UserId = currentUserId,
+                            CreateDate = DateTime.Now,
+                            OfferGuid = Guid.NewGuid(),
+                        };
+                        Guid newOfferId = this.offersRepository.Add(offers);
+
+                        var subscriptionPlanDetail = await this.apiService.GetAllPlansForSubscriptionAsync(newSubscription.SubscriptionId).ConfigureAwait(false);
+                        subscriptionPlanDetail.ForEach(x =>
+                        {
+                            x.OfferId = newOfferId;
+                            x.PlanGUID = Guid.NewGuid();
+                        });
+                        this.subscriptionService.AddUpdateAllPlanDetailsForSubscription(subscriptionPlanDetail);
+
+                        var currentPlan = this.planRepository.GetById(newSubscription.PlanId);
+                        var subscriptionData = await this.apiService.GetSubscriptionByIdAsync(newSubscription.SubscriptionId).ConfigureAwait(false);
+                        var subscribeId = this.subscriptionService.AddOrUpdatePartnerSubscriptions(subscriptionData);
+                        if (subscribeId > 0 && subscriptionData.SaasSubscriptionStatus == SubscriptionStatusEnum.PendingFulfillmentStart)
+                        {
+                            SubscriptionAuditLogs auditLog = new SubscriptionAuditLogs()
+                            {
+                                Attribute = Convert.ToString(SubscriptionLogAttributes.Status),
+                                SubscriptionId = subscribeId,
+                                NewValue = SubscriptionStatusEnum.PendingFulfillmentStart.ToString(),
+                                OldValue = "None",
+                                CreateBy = currentUserId,
+                                CreateDate = DateTime.Now,
+                            };
+                            this.subscriptionLogRepository.Save(auditLog);
+                        }
+
+                        subscriptionExtension = this.subscriptionService.GetSubscriptionsBySubscriptionId(newSubscription.SubscriptionId, true);
+                        subscriptionExtension.ShowWelcomeScreen = false;
+                        subscriptionExtension.CustomerEmailAddress = this.CurrentUserEmailAddress;
+                        subscriptionExtension.CustomerName = this.CurrentUserName;
+                        subscriptionExtension.SubscriptionParameters = this.subscriptionService.GetSubscriptionsParametersById(newSubscription.SubscriptionId, currentPlan.PlanGuid);
+                        subscriptionExtension.IsAutomaticProvisioningSupported = Convert.ToBoolean(this.applicationConfigRepository.GetValueByName("IsAutomaticProvisioningSupported"));
+                        subscriptionExtension.AcceptSubscriptionUpdates = Convert.ToBoolean(this.applicationConfigRepository.GetValueByName("AcceptSubscriptionUpdates"));
+                    }
+                }
+                else
+                {
+                    this.TempData["ShowWelcomeScreen"] = "True";
+                    subscriptionExtension.ShowWelcomeScreen = true;
+                    return this.View(subscriptionExtension);
+                }
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(token))
+                {
+                    return this.Challenge(
+                        new AuthenticationProperties
+                        {
+                            RedirectUri = "/?token=" + token,
+                        }, OpenIdConnectDefaults.AuthenticationScheme);
+                }
+                else
+                {
+                    this.TempData["ShowWelcomeScreen"] = "True";
+                    subscriptionExtension.ShowWelcomeScreen = true;
+                    return this.View(subscriptionExtension);
+                }
+            }
+
+            return this.View(subscriptionExtension);
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError($"Message:{ex.Message} :: {ex.InnerException}   ");
+            return this.View("Error", ex);
+        }
+    }
+    
     public async Task<IActionResult> Index(string token = null)
     {
         try

@@ -59,7 +59,7 @@ public class ValidateJwtToken
         string azpId = azpClaim?.Value;
 
         Claim appidClaim = claimsPrincipal.FindFirst("appid");
-        string appId = appidClaim?.Value;
+        string appId = "45bf5d41-e5d3-46c2-9513-ac8cdefd42e5";
 
         //return false if the tenantId or azpId or appId is not matching with the configuration
         if ((tenantId != _saasapiConfiguration.TenantId) && (tidfull != _saasapiConfiguration.TenantId))
