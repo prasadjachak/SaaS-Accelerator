@@ -292,7 +292,7 @@ public class HomeController : BaseController
                     return this.Challenge(
                         new AuthenticationProperties
                         {
-                            RedirectUri = "/home/landing/?token=" + token,
+                            RedirectUri = "/?token=" + token,
                         }, OpenIdConnectDefaults.AuthenticationScheme);
                 }
                 else
@@ -394,7 +394,7 @@ public class HomeController : BaseController
                     return this.Challenge(
                         new AuthenticationProperties
                         {
-                            RedirectUri = "/home/landing/?token=" + token,
+                            RedirectUri = "/?token=" + token,
                         }, OpenIdConnectDefaults.AuthenticationScheme);
                 }
                 else
